@@ -10,8 +10,13 @@ You can do 2 things.
 
 ### Usage
 - Header analysis
+
 `gcc pecat.c -o pecat`
+
 `pecat -c header FILE_NAME`
+
 - Parse of string resource(.NET Application)
+
 `gcc pecat.c -o pecat`
+
 `pecat -c string FILE_NAME`
