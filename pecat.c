@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #define IMAGE_DOS_SIGNATURE                0x5A4D     // MZ
 #define IMAGE_NT_SIGNATURE                 0x00004550 // PE00
@@ -609,47 +610,95 @@ void getRuntimeResourceNameAndDataSection(FILE *fp){
   free(dataSection);
 }
 
-void getMetadataheader(FILE *fp){
-  fread(&metadataHeader, sizeof(unsigned char), 30, fp);
+/* void getMetadataheader(FILE *fp){ */
+/*   fread(&metadataHeader, sizeof(unsigned char), 30, fp); */
+/* } */
+
+FILE *fileOpen(FILE *fp, const char *filename){
+  fp = fopen(filename, "rb");
+
+  if(fp == NULL){
+    fprintf(stderr, "Can not open the %s\n", filename);
+    exit(1);
+  }
+
+  return fp;
 }
 
-int main(int argc, char *argv[]){
-  FILE *fp;
+int getFileSize(const char *filename){
   long file_size;
   struct stat st;
 
-  if(argc < 2){
-    printf("Usage: %s filename\n", argv[0]);
+  if(filename == NULL){
+    fprintf(stderr, "Can not open the file\n");
     exit(1);
   }
 
-  fp = fopen(argv[1], "rb");
-
-  if(fp == NULL){
-    fprintf(stderr, "Can not open the %s\n", argv[1]);
-    exit(1);
-  }
-
-  if(stat(argv[1], &st) != 0){
-    fprintf(stderr, "Can not open the %s\n", argv[1]);
+  if(stat(filename, &st) != 0){
+    fprintf(stderr, "Can not open the %s\n", filename);
     exit(1);
   }
 
   file_size = st.st_size;
 
-  printf("File size : %ld\n", file_size);
+  return file_size;
+}
 
-  getDosheader(fp);
-  getNtHeader(fp);
-  getFileHeader(fp);
-  getOptionalHeader(fp);
-  getSectionHeader(fp);
-  getClrHeader(fp);
-  getResourceManagerHeader(fp);
-  getRuntimeResourceHeader(fp);
-  getRuntimeResourceNameAndDataSection(fp);
+int main(int argc, char *argv[]){
+  int opt;
+  FILE *fp;
+  long file_size;
+  struct stat st;
+
+  if((opt = getopt(argc, argv, "c:")) == -1){
+
+    printf("Usage: %s -c header|string FILE_NAME\n", argv[0]);
+    exit(1);
+
+  } else if(opt == 'c'){
+
+    if(!strcmp((const char*)argv[optind - 1], "header")){
+
+      file_size = getFileSize(argv[3]);
+      fp = fileOpen(fp, argv[3]);
+
+      printf("File size : %ld\n", file_size);
+
+      getDosheader(fp);
+      getNtHeader(fp);
+      getFileHeader(fp);
+      getOptionalHeader(fp);
+      getSectionHeader(fp);
+
+    } else if(!strcmp((const char*)argv[optind - 1], "string")){
+
+      file_size = getFileSize(argv[3]);
+      fp = fileOpen(fp, argv[3]);
+
+      printf("File size : %ld\n", file_size);
+
+      getDosheader(fp);
+      getNtHeader(fp);
+      getFileHeader(fp);
+      getOptionalHeader(fp);
+      getSectionHeader(fp);
+      getClrHeader(fp);
+      getResourceManagerHeader(fp);
+      getRuntimeResourceHeader(fp);
+      getRuntimeResourceNameAndDataSection(fp);
+
+    } else{
+
+      printf("Usage: %s -c header|string FILE_NAME\n", argv[0]);
+      exit(1);
+
+    }
+  } else{
+
+    printf("Usage: %s -c header|string FILE_NAME\n", argv[0]);
+    exit(1);
+
+  }
 
   fclose(fp);
-
-  return 0;
 }
